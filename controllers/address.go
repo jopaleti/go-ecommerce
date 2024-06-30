@@ -7,7 +7,7 @@ import (
 )
 
 func AddAddress() gin.HandlerFunc {
-	return (c *din.Context) {
+	return (c *gin.Context) {
 		user_id := c.Query("id")
 		if user_id == "" {
 			c.Header("Content-Type", "application/json")
