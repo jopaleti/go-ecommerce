@@ -3,8 +3,15 @@ package token
 import(
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/form3tech-oss/jwt-go"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/bson"
+	"github.com/jopaleti/go-ecommerce/database"
 	"time"
 	"os"
+	"context"
+	"log"
 )
 
 type SignedDetails struct {

@@ -12,10 +12,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+	generate "github.com/jopaleti/go-ecommerce/tokens"
 )
 
-var UserCollection *mongo.Collection = database.UserData(database.Client, "users")
-var ProductCollection *mongo.Collection = database.ProductData(database.Client, "products")
+var UserCollection *mongo.Collection = database.UserData(database.Client, "Users")
+var ProductCollection *mongo.Collection = database.ProductData(database.Client, "Products")
 var Validate = validator.New()
 
 func HashPassword (password string) string {
@@ -128,7 +129,7 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		PasswordIsValid, msg := VerifyPassword(*user.Password, *found.Password)
+		PasswordIsValid, msg := VerifyPassword(*user.Password, *founduser.Password)
 
 		defer cancel()
 
@@ -143,6 +144,27 @@ func Login() gin.HandlerFunc {
 
 		generate.UpdateAllTokens(token, refreshToken, founduser.User_ID)
 		c.JSON(http.StatusFound, founduser)
+	}
+}
+
+func ProductViewerAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var products models.Product
+		defer cancel()
+
+		if err := c.BindJSON(&products); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		products.Product_ID = primitive.NewObjectID()
+		_, anyerr := ProductCollection.InsertOne(ctx, products)
+		if anyerr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Product not inserted successfully"})
+			return
+		}
+		defer cancel()
+		c.JSON(http.StatusOk, "Successfully added")
 	}
 }
 
@@ -167,9 +189,9 @@ func SearchProduct() gin.HandlerFunc {
 			return
 		}
 
-		defer cursor.Close()
+		defer cursor.Close(ctx)
 
-		if err := cursor.err(); err != nil {
+		if err := cursor.Err(); err != nil {
 			log.Println(err)
 			c.IndentedJSON(400, "Invalid")
 			return

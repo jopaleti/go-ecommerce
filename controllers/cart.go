@@ -5,6 +5,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/jopaleti/go-ecommerce/models"
+	"github.com/jopaleti/go-ecommerce/database"
 	"time"
 	"context"
 	"errors"
@@ -20,7 +22,7 @@ type Application struct {
 func NewApplication(prodCollection, userCollection *mongo.Collection) *Application {
 	return &Application{
 		prodCollection: prodCollection,
-		userCollection: userCollection
+		userCollection: userCollection,
 	}
 }
 

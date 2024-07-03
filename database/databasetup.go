@@ -3,8 +3,11 @@ package database
 import (
 	"log"
 	"context"
+	"fmt"
+	"time"
+	
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func DBSet() *mongo.Client{

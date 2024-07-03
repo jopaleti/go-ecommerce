@@ -1,6 +1,14 @@
-// package database
+package database
 
 import (
+	"context"
+	"errors"
+	"log"
+	"time"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/jopaleti/go-ecommerce/models"
 )
 
 var (
@@ -61,8 +69,10 @@ func RemoveCartItem(ctx context.Context, prodCollection, userCollection *mongo.C
 func BuyItemFromCart(ctx context.Context, userCollection *mongo.Collection, userID string) error {
 	// Fetch the cart of the user
 	// Find the cart total
-	// create an order with the items
-	// Empty upp the cart
+	// Create an order with the items
+	// Address order to the user collection
+	// Added order in the cart to the list
+	// Empty up the cart
 
 	id, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
@@ -110,8 +120,61 @@ func BuyItemFromCart(ctx context.Context, userCollection *mongo.Collection, user
 	if err != nil {
 		log.Println(err)
 	}
+
+	filter2 := bson.D{primitive.E{Key: "_id", Value:id}}
+	update2 := bson.M{"$push":bson.M{"orders.$[].order_list":bson.M{"$each":getcartitems.UserCart}}} 
+	_, err = userCollection.UpdateOne(ctx, filter2, update2)
+	if err != nil {
+		log.Println(err)
+	}
+
+	usercart_empty := make([]models.ProductUser, 0)
+	filter3 := bson.D{primitive.E{Key:"_id", Value:id}}
+	update3 := bson.D{{Key:"$set", Value:bson.D{primitive.E{Key: "usercart", Value: usercart_empty}}}}
+	_, err = userCollection.UpdateOne(ctx, filter3, update3)
+	if err != nil {
+		return ErrCantBuyCartItem
+	}
+	return nil
 }
 
-func InstantBuy() {
+func InstantBuy(ctx context.Context, prodCollection, userCollection *mongo.Collection, productID primitive.ObjectID, userID string) error {
+	id, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		log.Println(err)
+		return ErrUserIdIsNotValid
+	}
 
+	// Product details
+	var product_details models.ProductUer
+	var orders_detail models.Order
+
+	orders_detail.Order_ID = primitive.NewObjectID()
+	orders_detail.Order_At = time.Now()
+	orders_detail.Order_Cart = make([]modles.ProductUer, 0)
+	orders_detail.Payment_Method.COD = true
+
+	// Now we want to find the complete details of a particular productID
+	err = prodCollection.FindOne(ctx, bson.D{primitive.E{Key: "_id", Value: productID}}).Decode(&product_details)
+	if err != nil {
+		log.Println(err)
+	}
+
+	orders_detail.Price = product_details.Price
+
+	filter := bson.D{primitive.E{Key:"_id", Value: id}}
+	update := bson.D{Key: "$push", Value:bson.D{primitive.E{key:"orders", Value: orders_detail}}}
+	_, err = userCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		log.Println(err)
+	}
+
+	filter2 := bson.D{primitive.E{Key:"_id", Value: id}}
+	update2 := bson.M{"$push":bson.M{"orders.$[].order_list": product_details}}
+
+	_, err = userCollection.UpdateOne(ctx, filter2, update2)
+	if err != nil {
+		log.Println(err)
+	}
+	return nil
 }
