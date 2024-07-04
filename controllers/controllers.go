@@ -13,6 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 	generate "github.com/jopaleti/go-ecommerce/tokens"
+	"github.com/jopaleti/go-ecommerce/database"
+	"github.com/jopaleti/go-ecommerce/models"
 )
 
 var UserCollection *mongo.Collection = database.UserData(database.Client, "Users")
@@ -53,7 +55,7 @@ func SignUp() gin.HandlerFunc {
 
 		validationErr := Validate.Struct(user)
 		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error", validationErr})
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr})
 			return
 		}
 
@@ -66,11 +68,11 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		if count > 0 {
-			c.JSON(http.StatusBadRequest, gin.H("error": "User already exist..."))
+			c.JSON(http.StatusBadRequest, gin.H{"error": "User already exist..."})
 		}
 
 		// Checking for the phone number
-		count, err := UserCollection.CountDocuments(ctx, bson.M{"phone": user.Phone})
+		count, err = UserCollection.CountDocuments(ctx, bson.M{"phone": user.Phone})
 
 		defer cancel()
 		if err != nil {
@@ -116,7 +118,7 @@ func Login() gin.HandlerFunc {
 
 		var user models.User
 		if err := c.BindJSON(&user); err != nil {
-			c.JSON(c.StatusInternalServerError, gin.H("error": err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
 		
@@ -125,7 +127,7 @@ func Login() gin.HandlerFunc {
 		defer cancel()
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H("error": "Login details or password incorrect"))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Login details or password incorrect"})
 			return
 		}
 
@@ -134,12 +136,12 @@ func Login() gin.HandlerFunc {
 		defer cancel()
 
 		if !PasswordIsValid {
-			c.JSON(http.StatusInternalServerError, gin.H("error": msg))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			fmt.Println(msg)
 			return
 		}
 
-		token, refreshToken, _ := generate.TokenGenerator(*founduser.Email, *founduser.First_Name, *founduser.Last_Name, *founduser.User_ID)
+		token, refreshToken, _ := generate.TokenGenerator(*founduser.Email, *founduser.First_Name, *founduser.Last_Name, founduser.User_ID)
 		defer cancel()
 
 		generate.UpdateAllTokens(token, refreshToken, founduser.User_ID)
@@ -164,7 +166,7 @@ func ProductViewerAdmin() gin.HandlerFunc {
 			return
 		}
 		defer cancel()
-		c.JSON(http.StatusOk, "Successfully added")
+		c.JSON(http.StatusCreated, "Successfully added")
 	}
 }
 
@@ -211,7 +213,7 @@ func SearchProductByQuery() gin.HandlerFunc {
 		if queryParam == "" {
 			log.Println("Query is empty")
 			c.Header("Content-Type", "application/json")
-			c.JSON(http.StatusNotFound, gin.{"Error": "Invalid search index"})
+			c.JSON(http.StatusNotFound, gin.H{"Error": "Invalid search index"})
 			c.Abort()
 			return
 		}

@@ -37,9 +37,9 @@ func (app *Application) AddToCart() gin.HandlerFunc {
 		}
 
 		userQueryID := c.Query("userID")
-		if userQueryID = "" {
+		if userQueryID == "" {
 			log.Println("User Id is empty")
-			_ = e.AbortWithError(http.StatusBadRequest, errors.New("User id is empty"))
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("User id is empty"))
 			return
 		}
 
@@ -74,9 +74,9 @@ func (app *Application) RemoveItem() gin.HandlerFunc {
 		}
 
 		userQueryID := c.Query("userID")
-		if userQueryID = "" {
+		if userQueryID == "" {
 			log.Println("User Id is empty")
-			_ = e.AbortWithError(http.StatusBadRequest, errors.New("User id is empty"))
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("User id is empty"))
 			return
 		}
 
@@ -108,18 +108,18 @@ func GetItemFromCart() gin.HandlerFunc {
 		
 		if user_id == "" {
 			c.Header("Content-Type", "application/json")
-			c.JSON(http.StatusNotFound, gin.H("error": "Invalid Id"))
+			c.JSON(http.StatusNotFound, gin.H{"error": "Invalid Id"})
 			c.Abort()
 			return
 		}
 
-		usert_id := primitive.ObjectIdFromHex(user_id)
+		usert_id, err := primitive.ObjectIDFromHex(user_id)
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 		
-		var filedcart models.UserID
-		err := UserCollection.FindOne(ctx, bson.D{primitive.E{key: "_id", Value: usert_id}})
+		var filedcart models.User
+		err = UserCollection.FindOne(ctx, bson.D{primitive.E{Key: "_id", Value: usert_id}}).Decode(&filedcart)
 
 		if err != nil {
 			log.Println(err)
@@ -153,7 +153,7 @@ func (app *Application) BuyFromCart() gin.HandlerFunc {
 
 		if userQueryID == "" {
 			log.Println("User id is empty")
-			_ = c.AbortWithError(http.StatusBadRequest, error.New("UserID is empty"))
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("UserID is empty"))
 			return
 		}
 
@@ -182,9 +182,9 @@ func (app *Application) InstantBuy() gin.HandlerFunc {
 		}
 
 		userQueryID := c.Query("userID")
-		if userQueryID = "" {
+		if userQueryID == "" {
 			log.Println("User Id is empty")
-			_ = e.AbortWithError(http.StatusBadRequest, errors.New("User id is empty"))
+			_ = c.AbortWithError(http.StatusBadRequest, errors.New("User id is empty"))
 			return
 		}
 

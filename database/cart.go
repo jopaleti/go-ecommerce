@@ -43,7 +43,7 @@ func AddProductToCart(ctx context.Context, prodCollection, userCollection *mongo
 	filtered := bson.D{primitive.E{Key: "_id", Value: id}}
 	update := bson.D{{Key: "$push", Value: bson.D{primitive.E{Key: "usercart", Value: bson.D{{Key: "$each", Value: productCart}}}}}}
 
-	_, err = userCollection.UpdateOne(ctx, filter, update)
+	_, err = userCollection.UpdateOne(ctx, filtered, update)
 	if err != nil {
 		return ErrCantUpdateUser
 	}
@@ -59,7 +59,7 @@ func RemoveCartItem(ctx context.Context, prodCollection, userCollection *mongo.C
 
 	filter := bson.D{primitive.E{Key: "_id", Value:id}}
 	update := bson.M{"$pull": bson.M{"usercart": bson.M{"_id": productID}}}
-	_, err := UpdateMany(ctx, filter, update)
+	_, err = userCollection.UpdateMany(ctx, filter, update)
 	if err != nil {
 		return ErrCantRemoveItemCart
 	}
@@ -104,8 +104,8 @@ func BuyItemFromCart(ctx context.Context, userCollection *mongo.Collection, user
 	var total_price int32
 
 	for _, user_item := range getusercart {
-		price = user_item["total"]
-		total_price = user_item[int32]
+		price := user_item["total"]
+		total_price = price.(int32)
 	}
 	ordercart.Price = int(total_price)
 
@@ -146,12 +146,12 @@ func InstantBuy(ctx context.Context, prodCollection, userCollection *mongo.Colle
 	}
 
 	// Product details
-	var product_details models.ProductUer
+	var product_details models.ProductUser
 	var orders_detail models.Order
 
 	orders_detail.Order_ID = primitive.NewObjectID()
 	orders_detail.Order_At = time.Now()
-	orders_detail.Order_Cart = make([]modles.ProductUer, 0)
+	orders_detail.Order_Cart = make([]models.ProductUser, 0)
 	orders_detail.Payment_Method.COD = true
 
 	// Now we want to find the complete details of a particular productID
@@ -163,7 +163,7 @@ func InstantBuy(ctx context.Context, prodCollection, userCollection *mongo.Colle
 	orders_detail.Price = product_details.Price
 
 	filter := bson.D{primitive.E{Key:"_id", Value: id}}
-	update := bson.D{Key: "$push", Value:bson.D{primitive.E{key:"orders", Value: orders_detail}}}
+	update := bson.D{{Key: "$push", Value:bson.D{primitive.E{Key:"orders", Value: orders_detail}}}}
 	_, err = userCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		log.Println(err)

@@ -2,7 +2,7 @@ package token
 
 import(
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/form3tech-oss/jwt-go"
+	// "github.com/form3tech-oss/jwt-go"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -34,7 +34,7 @@ func TokenGenerator(email string, firstname string, lastname string, uid string)
 		Uid: uid,
 		StandardClaims: jwt.StandardClaims {
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
-		}
+		},
 	}
 
 	refreshclaims := &SignedDetails {
@@ -59,7 +59,7 @@ func TokenGenerator(email string, firstname string, lastname string, uid string)
 }
 
 func ValidateToken(signedtoken string) (claims *SignedDetails, msg string) {
-	token, err := jwt.ParseWithClaims(signedtoken, &SignDetails{}, func(token *jwt.Token)(interface{}, error) {
+	token, err := jwt.ParseWithClaims(signedtoken, &SignedDetails{}, func(token *jwt.Token)(interface{}, error) {
 		return []byte(SECRET_KEY), nil 
 	})
 
@@ -92,7 +92,7 @@ func UpdateAllTokens(signedtoken string, signedrefreshtoken string, userid strin
 	updateobj = append(updateobj, bson.E{Key: "refresh_token", Value: signedrefreshtoken})
 	updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
-	updateobj = append(updateobj, bson.E{Key: "updateat", Value: update_at})
+	updateobj = append(updateobj, bson.E{Key: "updateat", Value: updated_at})
 
 	upsert := true
 
@@ -100,7 +100,7 @@ func UpdateAllTokens(signedtoken string, signedrefreshtoken string, userid strin
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
-	UserData.UpdateOne(ctx, filter, bson.D{
+	_, err := UserData.UpdateOne(ctx, filter, bson.D{
 		{Key:"$set", Value: updateobj},
 	},
 	&opt)
