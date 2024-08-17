@@ -1,13 +1,14 @@
 package main
 
 import (
-	"os"
 	"log"
+	"os"
+
+	"github.com/gin-gonic/gin"
 	"github.com/jopaleti/go-ecommerce/controllers"
 	"github.com/jopaleti/go-ecommerce/database"
 	"github.com/jopaleti/go-ecommerce/middleware"
 	"github.com/jopaleti/go-ecommerce/routes"
-	"github.com/gin-gonic/gin"	
 )
 
 func main() {
@@ -21,6 +22,11 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Welcome to E-Commerce API",
+		})
+	})
 	routes.UserRoutes(router)
 	router.Use(middleware.Authentication())
 
