@@ -44,6 +44,9 @@ func TestHomeHandler(t *testing.T) {
 type userModel struct {
 	Email	string	`json:"email"      validate:"email,required"`
 	Password string	`json:"password"   validate:"required,min=6"`
+	First_Name string `json:"first_name"  validate:"required"`
+	Last_Name string `json:"last_name"   validate:"required"`
+	Phone string `json:"phone" validate:"required"`
 }
 
 func TestLogin (t *testing.T) {
@@ -63,4 +66,26 @@ func TestLogin (t *testing.T) {
 	
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusFound, w.Code)
+}
+
+func TestSignUp (t *testing.T) {
+
+	r := helpers.SetUpRouter()
+	r.POST("/users/signup", controllers.SignUp())
+
+	user := userModel {
+		Email: "oopalet7pi@gmail.com",
+		Password: "tb787945",
+		First_Name: "Oluwasegun",
+		Last_Name: "Opaleti",
+		Phone: "08345678",
+	}
+
+	jsonValue, _ := json.Marshal(user)
+	req, _ := http.NewRequest("POST", "/users/signup", bytes.NewBuffer(jsonValue))
+
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusCreated, w.Code)
 }
