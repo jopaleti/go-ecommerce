@@ -89,3 +89,28 @@ func TestSignUp (t *testing.T) {
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusCreated, w.Code)
 }
+
+type productModel struct {
+	Product_Name string `json:"product_name"`
+	Price        uint64 `json:"price"`
+	Rating    uint8 `json:"rating"`
+	Image     string `json:"image"`
+}
+func TestProductViewerAdmin(t *testing.T) {
+	r := helpers.SetUpRouter()
+	r.POST("/admin/addproduct", controllers.ProductViewerAdmin())
+
+	product := productModel{
+		Product_Name: "Samsung Galaxy S21",
+		Price: 200000,
+		Rating: 4,
+		Image: "https://www.google.com",
+	}
+
+	jsonValue, _ := json.Marshal(product)
+	req, _ := http.NewRequest("POST", "/admin/addproduct", bytes.NewBuffer(jsonValue))
+
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, req)
+	assert.Equal(t, http.StatusCreated, response.Code)
+}
